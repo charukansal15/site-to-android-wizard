@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ import { SplashScreen } from "@/components/SplashScreen";
 import { IssueType } from "@/types/issue";
 import { FilterModal } from "@/components/FilterModal";
 import { NewIssueForm } from "@/components/NewIssueForm";
+import { CandidateRegistrationForm } from "@/components/CandidateRegistrationForm";
 
 const Index = () => {
   const [showSplash, setShowSplash] = useState(true);
@@ -20,19 +20,37 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [candidates, setCandidates] = useState<Array<{
+    id: string;
+    name: string;
+    department: string;
+    rating: number;
+    avatar?: string;
+  }>>([
+    {
+      id: "1",
+      name: "Sarah Johnson",
+      department: "Roads Department",
+      rating: 4.8,
+    },
+    {
+      id: "2",
+      name: "Michael Chen",
+      department: "Water Resources",
+      rating: 4.2,
+    }
+  ]);
 
   const categories = ["Roads", "Water Supply", "Electricity", "Waste", "Public Safety", "Others"];
   const statuses = ["ongoing", "pending", "resolved"];
+  const departments = ["Roads Department", "Water Resources", "Electricity Department", "Waste Management", "Public Safety", "Urban Planning"];
 
-  // Simulate loading issues from an API
   useEffect(() => {
     const loadIssues = async () => {
-      // Show splash screen for 2 seconds
       setTimeout(() => {
         setShowSplash(false);
       }, 2000);
 
-      // Simulate API fetch delay
       setTimeout(() => {
         const mockIssues: IssueType[] = [
           {
@@ -130,13 +148,30 @@ const Index = () => {
     setIssues([issueWithId, ...issues]);
   };
 
+  const handleRegisterCandidate = (candidateData: {
+    name: string;
+    department: string;
+    experience: string;
+    email: string;
+    phone: string;
+  }) => {
+    console.log("New candidate registration:", candidateData);
+    
+    const newCandidate = {
+      id: `${candidates.length + 1}`,
+      name: candidateData.name,
+      department: candidateData.department,
+      rating: 0,
+    };
+    
+    setCandidates([...candidates, newCandidate]);
+  };
+
   const filteredIssues = issues.filter(issue => {
-    // If no filters are selected, show all issues
     if (selectedCategories.length === 0 && selectedStatuses.length === 0) {
       return filter === "all" || issue.category === filter;
     }
     
-    // Apply category and status filters
     const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(issue.category);
     const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(issue.status);
     
@@ -288,39 +323,33 @@ const Index = () => {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col space-y-4">
-                <div className="flex items-center justify-between border-b pb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
-                    <div>
-                      <h4 className="font-medium flex items-center">
-                        Sarah Johnson 
-                        <Star className="w-4 h-4 text-yellow-500 ml-1 fill-yellow-500" />
-                      </h4>
-                      <p className="text-sm text-gray-500">Roads Department • 4.8 ★</p>
+                {candidates.map((candidate) => (
+                  <div key={candidate.id} className="flex items-center justify-between border-b pb-3 last:border-0">
+                    <div className="flex items-center gap-2">
+                      <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
+                      <div>
+                        <h4 className="font-medium flex items-center">
+                          {candidate.name}
+                          {candidate.rating > 0 && (
+                            <Star className="w-4 h-4 text-yellow-500 ml-1 fill-yellow-500" />
+                          )}
+                        </h4>
+                        <p className="text-sm text-gray-500">{candidate.department} • {candidate.rating > 0 ? `${candidate.rating} ★` : 'New'}</p>
+                      </div>
                     </div>
+                    <Button variant="outline" size="sm">View</Button>
                   </div>
-                  <Button variant="outline" size="sm">View</Button>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
-                    <div>
-                      <h4 className="font-medium">Michael Chen</h4>
-                      <p className="text-sm text-gray-500">Water Resources • 4.2 ★</p>
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm">View</Button>
-                </div>
+                ))}
+                {candidates.length === 0 && (
+                  <p className="text-center text-gray-500 py-4">No candidates registered yet</p>
+                )}
               </div>
             </CardContent>
             <CardFooter className="pt-0">
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={() => toast.info("Candidate registration will be available soon!")}
-              >
-                Register as Candidate
-              </Button>
+              <CandidateRegistrationForm 
+                departments={departments}
+                onRegisterCandidate={handleRegisterCandidate}
+              />
             </CardFooter>
           </Card>
         </TabsContent>
