@@ -117,9 +117,17 @@ export function NewIssueForm({ categories, onAddIssue }: NewIssueFormProps) {
             <Button variant="outline">Cancel</Button>
           </DialogTrigger>
           <DialogTrigger asChild>
-            {(props) => (
-              <Button onClick={() => handleSubmit(props.onClick)}>Submit Issue</Button>
-            )}
+            <Button onClick={(e) => {
+              const closeDialog = () => {
+                const triggerButton = e.currentTarget.closest("button[data-state]");
+                if (triggerButton) {
+                  (triggerButton as HTMLButtonElement).click();
+                }
+              };
+              handleSubmit(closeDialog);
+            }}>
+              Submit Issue
+            </Button>
           </DialogTrigger>
         </div>
       </DialogContent>

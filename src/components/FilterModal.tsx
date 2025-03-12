@@ -113,9 +113,17 @@ export function FilterModal({
             <Button variant="outline">Cancel</Button>
           </DialogTrigger>
           <DialogTrigger asChild>
-            {(props) => (
-              <Button onClick={() => handleApply(props.onClick)}>Apply Filters</Button>
-            )}
+            <Button onClick={(e) => {
+              const closeDialog = () => {
+                const triggerButton = e.currentTarget.closest("button[data-state]");
+                if (triggerButton) {
+                  (triggerButton as HTMLButtonElement).click();
+                }
+              };
+              handleApply(closeDialog);
+            }}>
+              Apply Filters
+            </Button>
           </DialogTrigger>
         </div>
       </DialogContent>
