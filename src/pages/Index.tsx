@@ -2,14 +2,15 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Wifi, ThumbsUp, Filter, MessageCircle, Users, Star, Plus } from "lucide-react";
+import { Wifi, ThumbsUp, Filter, MessageCircle, Users, Star } from "lucide-react";
 import { IssueFeed } from "@/components/IssueFeed";
 import { SplashScreen } from "@/components/SplashScreen";
 import { IssueType } from "@/types/issue";
+import { FilterModal } from "@/components/FilterModal";
+import { NewIssueForm } from "@/components/NewIssueForm";
 
 const Index = () => {
   const [showSplash, setShowSplash] = useState(true);
@@ -17,6 +18,11 @@ const Index = () => {
   const [filter, setFilter] = useState("all");
   const [issues, setIssues] = useState<IssueType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+
+  const categories = ["Roads", "Water Supply", "Electricity", "Waste", "Public Safety", "Others"];
+  const statuses = ["ongoing", "pending", "resolved"];
 
   // Simulate loading issues from an API
   useEffect(() => {
@@ -95,12 +101,47 @@ const Index = () => {
   };
 
   const handleFilterChange = (category: string) => {
-    setFilter(category);
+    if (category === "all") {
+      setFilter("all");
+      setSelectedCategories([]);
+    } else {
+      setFilter(category);
+      setSelectedCategories([category]);
+    }
   };
 
-  const handleAddIssue = () => {
-    toast.info("New issue reporting will be available soon!");
+  const handleApplyFilters = (categories: string[], statuses: string[]) => {
+    setSelectedCategories(categories);
+    setSelectedStatuses(statuses);
+    toast.success("Filters applied");
   };
+
+  const handleAddIssue = (newIssue: Omit<IssueType, "id" | "comments" | "upvotes" | "reportedDate">) => {
+    const now = new Date().toISOString().split('T')[0];
+    
+    const issueWithId: IssueType = {
+      ...newIssue,
+      id: `${issues.length + 1}`,
+      upvotes: 0,
+      reportedDate: now,
+      comments: []
+    };
+    
+    setIssues([issueWithId, ...issues]);
+  };
+
+  const filteredIssues = issues.filter(issue => {
+    // If no filters are selected, show all issues
+    if (selectedCategories.length === 0 && selectedStatuses.length === 0) {
+      return filter === "all" || issue.category === filter;
+    }
+    
+    // Apply category and status filters
+    const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(issue.category);
+    const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(issue.status);
+    
+    return matchesCategory && matchesStatus;
+  });
 
   if (showSplash) {
     return <SplashScreen />;
@@ -115,9 +156,10 @@ const Index = () => {
           </div>
           <h1 className="text-2xl font-bold">Report It</h1>
         </div>
-        <Button onClick={handleAddIssue} size="icon" variant="ghost">
-          <Plus className="w-6 h-6" />
-        </Button>
+        <NewIssueForm 
+          categories={categories}
+          onAddIssue={handleAddIssue}
+        />
       </header>
 
       <Tabs defaultValue="issues" className="mb-6">
@@ -145,19 +187,17 @@ const Index = () => {
         <TabsContent value="issues" className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">Recent Issues</h2>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex items-center gap-1"
-              onClick={() => toast.info("Filter options will be expanded soon!")}
-            >
-              <Filter className="w-4 h-4" />
-              Filter
-            </Button>
+            <FilterModal
+              categories={categories}
+              statuses={statuses}
+              selectedCategories={selectedCategories}
+              selectedStatuses={selectedStatuses}
+              onApplyFilters={handleApplyFilters}
+            />
           </div>
           
           <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
-            {["all", "Roads", "Water Supply", "Electricity", "Waste"].map((category) => (
+            {["all", ...categories].map((category) => (
               <Badge 
                 key={category} 
                 variant={filter === category ? "default" : "outline"}
@@ -170,7 +210,7 @@ const Index = () => {
           </div>
           
           <IssueFeed 
-            issues={issues.filter(issue => filter === "all" || issue.category === filter)} 
+            issues={filteredIssues} 
             onUpvote={handleUpvote}
             isLoading={isLoading}
           />
